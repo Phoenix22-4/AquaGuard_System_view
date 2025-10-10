@@ -3,663 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AquaGuard Kenya: IoT Water Management System</title>
+    <title>AquaGuard Kenya: Production Pitch</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        const apiKey = "AIzaSyDZ3lsOhZ4HRY9JmZlgulOjRrZ5KYZWdpk";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-        
-        async function fetchGeminiResponse(systemPrompt, userQuery) {
-            const loader = document.getElementById('market-loader') || document.getElementById('safety-loader');
-            if(loader) loader.classList.remove('hidden');
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-            };
-
-            const maxRetries = 3;
-            let delay = 1000;
-            
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.status === 429 && i < maxRetries - 1) {
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 2; 
-                        continue;
-                    }
-
-                    const result = await response.json();
-                    
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Error: Failed to get response from Gemini.";
-                    if(loader) loader.classList.add('hidden');
-                    return text;
-                } catch (error) {
-                    if (i < maxRetries - 1) {
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 2; 
-                    } else {
-                        if(loader) loader.classList.add('hidden');
-                        return "Error: Network or API failure.";
-                    }
-                }
-            }
-        }
-        
-        async function analyzeMarketViability() {
-            const output = document.getElementById('market-analysis-output');
-            
-            output.innerHTML = 'Analyzing KES costs and Nairobi market data...';
-
-            const systemPrompt = "You are a professional financial analyst. Based on the provided data, provide a concise, two-paragraph analysis of the project's profitability, risk, and market viability. Highlight the profit margin and the target market size (40% of Nairobi homes).";
-            
-            const userQuery = `Project: AquaGuard Kenya Water Management System. Components Cost (BOM): KES 6,880. Low-end Selling Price: KES 18,000. High-end Selling Price: KES 25,000. Target Market: 40% of Nairobi homes use tank systems.`;
-
-            const analysis = await fetchGeminiResponse(systemPrompt, userQuery);
-
-            output.innerHTML = `<div class="p-4 bg-gray-50 rounded-lg text-sm whitespace-pre-wrap">${analysis}</div>`;
-        }
-        
-        async function checkSafetyCertifications() {
-            const output = document.getElementById('safety-output');
-            
-            output.innerHTML = 'Generating compliance report based on SSR and AC voltage...';
-
-            const systemPrompt = "You are an expert electrical safety and compliance engineer. Given the hardware components, generate a short, critical safety checklist for the manufacturer. Include 3 essential safety tips and recommend the necessary international certification (CE, FCC, or UL) required for a consumer product operating on 240V AC mains in a new market. Use clear bullet points.";
-            
-            const userQuery = `Core components handling mains power: Solid State Relay (SSR-40DA) and 240V AC Pump. Operating environment: High humidity (tanks). Goal: Consumer safety and market approval.`;
-
-            const checklist = await fetchGeminiResponse(systemPrompt, userQuery);
-
-            output.innerHTML = `<div class="p-4 bg-red-50 rounded-lg border border-red-300 text-sm whitespace-pre-wrap">${checklist}</div>`;
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <!-- 
-        Chosen Palette: Savanna Calm 
-        Application Structure Plan: The SPA is structured as a narrative journey, starting with a high-level overview and impact (the "Why"), moving to an interactive system diagram (the "How it Works"), delving into specific technical pillars (the "What"), analyzing the business case (the "Why it's Viable"), and concluding with the production roadmap (the "What's Next"). This thematic, top-down structure is more intuitive for a broader audience than a traditional report layout. It allows a user to grasp the core value proposition immediately, explore the system's architecture interactively, and then drill down into technical or economic details as needed via tabs and dedicated sections. This flow prioritizes user understanding and engagement over strict adherence to the source document's order.
+        Chosen Palette: Aqua Green & Impact Red
+        Application Structure Plan: The SPA is designed as a full-screen, slide-by-slide presentation. This structure, controlled by explicit 'Next' and 'Previous' buttons, forces a linear narrative and focuses user attention on a single key message at a time, mimicking a professional pitch deck. The flow moves from the high-level problem and value proposition to the technical architecture, the business case, and finally the production roadmap. This is more effective for a pitch than a free-scrolling page, as it ensures the core story is told in the intended, most impactful order.
         Visualization & Content Choices: 
-        - Report Info: Key project benefits (water/cost savings, pump protection). Goal: Inform/Impact. Viz/Method: Prominent stat cards (HTML/CSS). Interaction: Static. Justification: Immediately communicates the core value proposition.
-        - Report Info: Overall system architecture. Goal: Organize/Explain. Viz/Method: Interactive diagram using HTML/Tailwind divs. Interaction: Hover/click on components to display detailed info text via JS. Justification: More engaging and explorable than a static image, allowing users to learn at their own pace.
-        - Report Info: Technical details (Hardware, Software, Safety). Goal: Organize/Inform. Viz/Method: Tabbed content sections (HTML/JS). Interaction: Click tabs to switch content. Justification: Organizes dense technical information into digestible chunks, preventing user overload.
-        - Report Info: Bill of Materials (BOM) cost breakdown. Goal: Compare/Analyze. Viz/Method: Donut Chart (Chart.js). Interaction: Tooltips on hover. Justification: Effectively shows the proportional cost of each component category.
-        - Report Info: Cost vs. Price vs. Profit. Goal: Compare/Analyze. Viz/Method: Bar Chart (Chart.js). Interaction: Tooltips on hover. Justification: Clearly visualizes the project's economic viability and profit margin.
-        - Report Info: Manufacturing Process. Goal: Explain Change. Viz/Method: Numbered list/timeline (HTML/CSS). Interaction: Static. Justification: A simple, clear process flow is most effective for this linear information.
-        - New Feature (AI): Market Viability Analysis. Goal: Analyze/Synthesize. Viz/Method: Text output block. Interaction: Click button (on demand). Justification: Provides a high-value, instant expert perspective on profitability and market fit, improving stakeholder confidence.
-        - New Feature (AI): Safety Checklist. Goal: Inform/Compliance. Viz/Method: Text output block with alert styling. Interaction: Click button (on demand). Justification: Generates critical, context-aware regulatory advice based on high-voltage hardware.
+        - Report Info: Title & Vision. Goal: Inform. Viz/Method: Full-screen hero section with bold typography. Interaction: Button to start. Justification: Creates a strong, branded opening slide.
+        - Report Info: Pump burnout cost, water wastage. Goal: Compare. Viz/Method: Side-by-side problem/solution layout with icons (Unicode) and contrasting colors (red/green). Interaction: Static. Justification: Immediately frames the problem and presents AquaGuard as the direct solution.
+        - Report Info: System architecture (ESP32, AWS, Django). Goal: Organize. Viz/Method: Simplified flowchart built with HTML/Tailwind divs. Interaction: Static. Justification: Visually explains the complex system in an easy-to-digest format suitable for a presentation slide.
+        - Report Info: Financial data (BOM cost, pricing, market size). Goal: Analyze/Compare. Viz/Method: Bar Chart (Chart.js) for profitability and large stat cards (HTML) for key numbers. Interaction: Tooltips on chart. Justification: The bar chart provides a clear, quantitative comparison of cost vs. revenue, while the stat cards highlight the most important business metrics for quick absorption.
+        - Report Info: Deployment plan & safety warning. Goal: Inform. Viz/Method: A simple two-column layout for the roadmap and a high-contrast callout box for the critical safety message. Interaction: Static. Justification: Clearly separates the future plan from the non-negotiable safety requirements.
         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
     -->
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F5F5F5; 
-            color: #4A4A4A;
+            font-family: 'Montserrat', sans-serif;
+            background-color: #F5FFEE;
+            color: #1A202C;
+            scroll-snap-type: y mandatory;
+            overflow: hidden; 
         }
-        .bg-primary { background-color: #F5F5F5; }
-        .bg-secondary { background-color: #FFFFFF; }
-        .bg-accent { background-color: #00796B; } 
-        .text-accent { color: #00796B; }
-        .border-accent { border-color: #00796B; }
-        .nav-link {
-            padding: 8px 16px;
-            border-radius: 9999px;
-            transition: all 0.3s;
-            font-weight: 500;
+        .slide {
+            height: 100vh;
+            width: 100vw;
+            scroll-snap-align: start;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            position: relative;
+            flex-shrink: 0;
         }
-        .nav-link:hover, .nav-link.active {
-            background-color: #E0F2F1; 
-            color: #004D40;
+        main {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
         }
-        .stat-card {
-            background-color: #FFFFFF;
-            border-left: 5px solid #00796B;
-        }
-        .system-component {
-            transition: all 0.3s ease-in-out;
-            cursor: pointer;
-        }
-        .system-component:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .tab-button {
-            transition: all 0.3s;
-        }
-        .tab-button.active {
-            border-color: #00796B;
-            background-color: #E0F2F1;
-            color: #004D40;
-        }
+        .text-prime { color: #00796B; }
+        .bg-prime { background-color: #00796B; }
+        .text-secondary { color: #DC2626; }
         .chart-container {
             position: relative;
             width: 100%;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 40vh;
+            max-width: 600px;
+            height: 350px;
+            margin: 0 auto;
         }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 350px;
-            }
+        .bg-gradient-pulse {
+            background-image: linear-gradient(135deg, #00796B, #33B5E5);
+        }
+        .data-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+        }
+        .nav-btn {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 100;
         }
     </style>
 </head>
-<body class="bg-primary">
-
-    <!-- Header & Navigation -->
-    <header class="bg-secondary/80 backdrop-blur-sm sticky top-0 z-50 shadow-md">
-        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-accent">AquaGuard Kenya</h1>
-            <div class="hidden md:flex space-x-2">
-                <a href="#overview" class="nav-link">Overview</a>
-                <a href="#architecture" class="nav-link">Architecture</a>
-                <a href="#details" class="nav-link">The Solution</a>
-                <a href="#economics" class="nav-link">Impact</a>
-                <a href="#ai-analysis" class="nav-link">AI Insight</a>
-                <a href="#production" class="nav-link">Roadmap</a>
+<body>
+    <main id="presentation-container">
+        <!-- SLIDE 1: Title & Vision -->
+        <section id="slide1" class="slide bg-gradient-to-br from-green-50 to-teal-100">
+            <div class="text-center max-w-4xl">
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-6 text-prime">AQUAGUARD KENYA</h1>
+                <h2 class="text-2xl md:text-4xl font-bold text-gray-800">IoT-Driven Dual-Tank Water Management System</h2>
+                <p class="text-lg md:text-2xl mt-12 px-10 text-gray-600 font-bold tracking-wider">
+                    The Future of Resilient Water Management.
+                </p>
+                <button onclick="goToSlide(1)" class="mt-8 inline-block bg-prime text-white text-xl font-bold px-8 py-3 rounded-full shadow-lg hover:bg-teal-700 transition duration-300">
+                    Start Presentation
+                </button>
             </div>
-            <div class="md:hidden">
-                <select id="mobile-nav" class="bg-gray-200 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-accent focus:border-accent block w-full p-2.5">
-                    <option value="#overview">Overview</option>
-                    <option value="#architecture">Architecture</option>
-                    <option value="#details">The Solution</option>
-                    <option value="#economics">Impact</option>
-                    <option value="#ai-analysis">AI Insight</option>
-                    <option value="#production">Roadmap</option>
-                </select>
-            </div>
-        </nav>
-    </header>
-
-    <main class="container mx-auto px-6 py-12">
-
-        <!-- Section 1: Overview / Hero -->
-        <section id="overview" class="text-center mb-20">
-            <h2 class="text-4xl font-bold mb-4">Smart Water Management for a Resilient Kenya</h2>
-            <p class="max-w-3xl mx-auto text-lg text-gray-600 mb-10">
-                AquaGuard is an IoT-driven system that fully automates dual-tank water management, providing real-time remote monitoring and crucial dry-run protection to save water, energy, and money. It's designed specifically for the challenges of urban Kenyan homes and businesses.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                <div class="stat-card p-6 rounded-lg shadow-lg text-left">
-                    <span class="text-4xl">💧</span>
-                    <h3 class="text-xl font-semibold mt-2">Prevent Water Wastage</h3>
-                    <p class="text-gray-600 mt-1">Intelligent automation stops tank overflows, saving thousands of liters per month and conserving a vital resource during shortages.</p>
-                </div>
-                <div class="stat-card p-6 rounded-lg shadow-lg text-left">
-                    <span class="text-4xl">💰</span>
-                    <h3 class="text-xl font-semibold mt-2">Save Money</h3>
-                    <p class="text-gray-600 mt-1">Prevents catastrophic pump burnout from dry-running, saving homeowners over **KES 15,000** in potential repair and replacement costs.</p>
-                </div>
-                <div class="stat-card p-6 rounded-lg shadow-lg text-left">
-                    <span class="text-4xl">🛡️</span>
-                    <h3 class="text-xl font-semibold mt-2">Ensure Reliability</h3>
-                    <p class="text-gray-600 mt-1">Hybrid power with battery backup guarantees the system remains operational during frequent power cuts, ensuring continuous monitoring.</p>
-                </div>
+            <div class="nav-btn">
+                <button onclick="goToSlide(1)" class="bg-prime text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-teal-700 transition duration-300">Next →</button>
             </div>
         </section>
 
-        <!-- Section 2: Interactive Architecture -->
-        <section id="architecture" class="mb-20">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold">Interactive System Architecture</h2>
-                <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Hover over or click on each component to understand its role in the AquaGuard ecosystem. This diagram shows the complete data and command flow from your tanks to your fingertips.</p>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-                <div id="diagram-container" class="lg:col-span-2 grid grid-cols-3 grid-rows-3 gap-4 items-center text-center">
-                    <!-- Row 1 -->
-                    <div class="system-component bg-secondary p-4 rounded-lg shadow-md" data-info="device">
-                        <h4 class="font-semibold">Device Layer</h4>
-                        <p class="text-sm">ESP32 & Sensors</p>
+        <!-- SLIDE 2: Problem & Solution -->
+        <section id="slide2" class="slide bg-white">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 max-w-6xl w-full">
+                <div class="space-y-12">
+                    <h2 class="text-4xl md:text-5xl font-black text-secondary">THE CRITICAL PROBLEM</h2>
+                    <div class="bg-red-50 p-6 rounded-xl shadow-lg border-l-8 border-secondary space-y-4">
+                        <p class="text-2xl font-bold">1. Catastrophic Pump Failure</p>
+                        <p class="text-xl text-gray-700">Frequent **dry-running** burns out pump motors, costing homeowners **KES 15,000+** per incident in repairs.</p>
                     </div>
-                    <div class="flex items-center justify-center text-2xl font-mono text-accent">→</div>
-                    <div class="system-component bg-secondary p-4 rounded-lg shadow-md" data-info="cloud">
-                        <h4 class="font-semibold">Cloud Ingest</h4>
-                        <p class="text-sm">AWS IoT Core (MQTTs)</p>
-                    </div>
-                    
-                    <!-- Vertical Arrow -->
-                    <div></div>
-                    <div></div>
-                    <div class="flex items-center justify-center text-2xl font-mono text-accent -rotate-90 scale-150 my-4">→</div>
-
-                    <!-- Row 2 -->
-                    <div class="system-component bg-secondary p-4 rounded-lg shadow-md" data-info="control">
-                        <h4 class="font-semibold">Control Flow</h4>
-                        <p class="text-sm">Web App → ESP32</p>
-                    </div>
-                    <div class="flex items-center justify-center text-2xl font-mono text-accent scale-x-[-1]">→</div>
-                     <div class="system-component bg-secondary p-4 rounded-lg shadow-md" data-info="backend">
-                        <h4 class="font-semibold">Backend Logic</h4>
-                        <p class="text-sm">Django & WebSockets</p>
-                    </div>
-
-                    <!-- Vertical Arrow -->
-                    <div></div>
-                    <div></div>
-                    <div class="flex items-center justify-center text-2xl font-mono text-accent rotate-90 scale-150 my-4">→</div>
-
-                    <!-- Row 3 -->
-                    <div></div>
-                    <div class="flex items-center justify-center text-2xl font-mono text-accent">→</div>
-                    <div class="system-component bg-secondary p-4 rounded-lg shadow-md" data-info="frontend">
-                        <h4 class="font-semibold">User Interface</h4>
-                        <p class="text-sm">Web Dashboard</p>
-                    </div>
-                </div>
-
-                <div id="diagram-info" class="bg-secondary p-6 rounded-lg shadow-lg min-h-[250px] flex flex-col justify-center">
-                    <h3 class="font-bold text-lg text-accent mb-2">Component Details</h3>
-                    <p class="text-gray-600">Select a component to learn more.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 3: The Solution in Detail -->
-        <section id="details" class="mb-20">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold">The Solution in Detail</h2>
-                <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Explore the core pillars of the AquaGuard system. From the robust hardware that interacts with the physical world to the secure, scalable software that brings control to your screen.</p>
-            </div>
-            
-            <div class="flex justify-center mb-6 border-b-2">
-                <button class="tab-button active py-2 px-6 font-semibold border-b-2 border-transparent" data-tab="hardware">Hardware & Electronics</button>
-                <button class="tab-button py-2 px-6 font-semibold border-b-2 border-transparent" data-tab="software">Software & Cloud</button>
-                <button class="tab-button py-2 px-6 font-semibold border-b-2 border-transparent" data-tab="safety">Safety & Reliability</button>
-            </div>
-
-            <div id="tab-content" class="bg-secondary p-8 rounded-lg shadow-lg">
-                <div id="hardware-content" class="tab-pane active">
-                    <h3 class="text-2xl font-bold text-accent mb-4">Hardware & Electronics</h3>
-                    <p class="mb-4">The physical unit is built with proven, off-the-shelf components selected for reliability and cost-effectiveness. The core is the ESP32 microcontroller, which provides Wi-Fi connectivity and processing power. It interfaces with two key sensor types:</p>
-                    <ul class="list-disc list-inside space-y-2">
-                        <li><strong>JSN-SR04T Ultrasonic Sensor:</strong> A waterproof sensor that measures water levels with high precision by calculating the time-of-flight of a 40kHz sound pulse. This provides non-contact, reliable data even in humid tank environments.</li>
-                        <li><strong>ACS712 Current Sensor:</strong> This sensor operates on the Hall Effect principle, generating a voltage proportional to the current flowing through the pump's live wire. This allows the ESP32 to non-invasively monitor the pump's power consumption and detect a dry-run condition.</li>
-                    </ul>
-                </div>
-                <div id="software-content" class="tab-pane hidden">
-                    <h3 class="text-2xl font-bold text-accent mb-4">Software & Cloud Architecture</h3>
-                    <p class="mb-4">The software stack is designed for security, scalability, and flexibility, allowing deployment on platforms like Render or AWS.</p>
-                    <ul class="list-disc list-inside space-y-2">
-                        <li><strong>Cloud Communication (AWS IoT Core):</strong> The ESP32 communicates with the cloud using the secure and lightweight MQTTs protocol. AWS IoT Core acts as the central message broker, reliably routing data from thousands of devices.</li>
-                        <li><strong>Web Application (Django):</strong> The user-facing dashboard is a powerful Django application. It uses Django Channels and the Daphne server to handle real-time WebSocket connections, pushing live data to the user's browser without needing to refresh the page.</li>
-                         <li><strong>Hosting Strategy:</strong> The Django app is architected for portability. It can be quickly deployed to **Render** for its simplicity and managed PostgreSQL, and later migrated to **AWS Elastic Beanstalk** for fine-grained control and deeper integration with other AWS services as the user base scales.</li>
-                        <li><strong>Database Strategy:</strong> A dual-database approach ensures performance. **PostgreSQL (AWS RDS)** stores structured user and device ownership data, while **DynamoDB** is used for high-volume, time-series sensor data, perfect for future analytics.</li>
-                    </ul>
-                </div>
-                <div id="safety-content" class="tab-pane hidden">
-                    <h3 class="text-2xl font-bold text-accent mb-4">Safety & Reliability Features</h3>
-                    <p class="mb-4">AquaGuard is engineered to be resilient against common failure points in the Kenyan context.</p>
-                    <ul class="list-disc list-inside space-y-2">
-                        <li><strong>Intelligent Dry-Run Protection:</strong> The system's firmware includes a debouncing algorithm. It requires 5 consecutive low-current readings from the ACS712 sensor (over 2.5 seconds) to confirm a dry-run event. This prevents false alarms from momentary power fluctuations and ensures the pump is shut down only when genuinely at risk.</li>
-                        <li><strong>Hybrid Power System:</strong> During a power outage, the TP4056 module seamlessly switches power to the 18650 lithium-ion battery. The MT3608 boost converter ensures the ESP32 receives a stable 5V, keeping the system's brain online, monitoring levels, and ready to resume automatic operation the moment mains power is restored.</li>
-                        <li><strong>Hysteresis Control:</strong> The pump logic prevents rapid on/off cycling (chattering) which can damage the pump motor. It waits for the water level to drop to a significant low point (e.g., 30%) before starting and fills it to a high point (e.g., 95%) before stopping, ensuring longer, more efficient pumping cycles.</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 4: Economic Impact -->
-        <section id="economics" class="mb-20">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold">Economic & Market Impact</h2>
-                <p class="text-gray-600 mt-2 max-w-2xl mx-auto">AquaGuard is not only a technical solution but a commercially viable product tailored for the Kenyan market, offering significant savings to users and a strong business case.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-semibold text-center mb-4">Component Cost Breakdown (BOM)</h3>
-                    <div class="chart-container">
-                        <canvas id="bomChart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-semibold text-center mb-4">Profitability Analysis</h3>
-                     <div class="chart-container">
-                        <canvas id="profitChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Section 5: AI Insight -->
-        <section id="ai-analysis" class="mb-20">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-accent">✨ AI Expert Analysis</h2>
-                <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Utilize Gemini to instantly analyze the project's economic risks and generate a critical safety compliance checklist based on the high-voltage components.</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Market Viability Analysis -->
-                <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Market & Financial Viability</h3>
-                    <button onclick="analyzeMarketViability()" class="bg-accent text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700 transition duration-150">
-                        ✨ Run Financial Analysis
-                    </button>
-                    <div id="market-loader" class="hidden text-center mt-4">
-                        <p class="text-sm text-gray-500">Analyzing KES costs and Nairobi market data...</p>
-                    </div>
-                    <div id="market-analysis-output" class="mt-4">
-                        <p class="text-gray-500 text-sm">Click "Run Financial Analysis" to see an expert summary.</p>
+                    <div class="bg-red-50 p-6 rounded-xl shadow-lg border-l-8 border-secondary space-y-4">
+                        <p class="text-2xl font-bold">2. Water Wastage & Scarcity</p>
+                        <p class="text-xl text-gray-700">Manual monitoring leads to **tank overflows** and critical **resource loss**—a vital social and environmental concern.</p>
                     </div>
                 </div>
                 
-                <!-- Safety and Certification Checklist -->
-                <div class="bg-secondary p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">Safety & Compliance Checklist (240V AC)</h3>
-                    <button onclick="checkSafetyCertifications()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition duration-150">
-                        ✨ Generate Safety Checklist
-                    </button>
-                    <div id="safety-loader" class="hidden text-center mt-4">
-                        <p class="text-sm text-gray-500">Generating compliance report based on SSR and AC voltage...</p>
+                <div class="flex flex-col justify-center space-y-8">
+                    <h2 class="text-4xl md:text-5xl font-black text-prime">THE AQUAGUARD SOLUTION</h2>
+                    <div class="flex items-center space-x-4 bg-green-50 p-4 rounded-lg shadow-md">
+                        <span class="text-4xl text-prime">🛡️</span>
+                        <p class="text-xl">Uses **ACS712 Current Sensor** for **Dry-Run Safety** shutdown (current < 1A).</p>
                     </div>
-                    <div id="safety-output" class="mt-4">
-                        <p class="text-gray-500 text-sm">Click "Generate Safety Checklist" for vital compliance recommendations.</p>
+                    <div class="flex items-center space-x-4 bg-green-50 p-4 rounded-lg shadow-md">
+                        <span class="text-4xl text-prime">💧</span>
+                        <p class="text-xl">**JSN-SR04T Ultrasonic Sensors** provide zero-waste, reliable level measurement.</p>
+                    </div>
+                     <div class="flex items-center space-x-4 bg-green-50 p-4 rounded-lg shadow-md">
+                        <span class="text-4xl text-prime">📱</span>
+                        <p class="text-xl">**Custom Web App** enables remote monitoring and control from any device.</p>
                     </div>
                 </div>
+            </div>
+            <div class="nav-btn space-x-4">
+                <button onclick="goToSlide(0)" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-gray-500 transition duration-300">← Prev</button>
+                <button onclick="goToSlide(2)" class="bg-prime text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-teal-700 transition duration-300">Next →</button>
             </div>
         </section>
 
-        <!-- Section 6: Production Roadmap -->
-        <section id="production" class="bg-secondary p-8 rounded-lg shadow-lg">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold">Production & Future Roadmap</h2>
-                <p class="text-gray-600 mt-2 max-w-2xl mx-auto">From a validated prototype to a market-ready product, this is our plan for scaling manufacturing and enhancing the AquaGuard system.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div>
-                    <h3 class="text-xl font-bold text-accent mb-4">Manufacturing Process</h3>
-                    <ol class="relative border-l border-gray-300 space-y-6">
-                        <li class="ml-6">
-                            <span class="absolute flex items-center justify-center w-6 h-6 bg-teal-100 rounded-full -left-3 ring-8 ring-white">1</span>
-                            <h4 class="font-semibold">PCB Assembly</h4>
-                            <p class="text-sm text-gray-600">Automated PCBA for SMD components, with manual soldering for through-hole parts.</p>
-                        </li>
-                        <li class="ml-6">
-                            <span class="absolute flex items-center justify-center w-6 h-6 bg-teal-100 rounded-full -left-3 ring-8 ring-white">2</span>
-                            <h4 class="font-semibold">Firmware & Provisioning</h4>
-                            <p class="text-sm text-gray-600">Flash firmware and securely provision each unit with unique AWS IoT certificates.</p>
-                        </li>
-                        <li class="ml-6">
-                            <span class="absolute flex items-center justify-center w-6 h-6 bg-teal-100 rounded-full -left-3 ring-8 ring-white">3</span>
-                            <h4 class="font-semibold">Quality Control</h4>
-                            <p class="text-sm text-gray-600">Rigorous bench testing of all electronic functions, including simulated dry-run events.</p>
-                        </li>
-                         <li class="ml-6">
-                            <span class="absolute flex items-center justify-center w-6 h-6 bg-teal-100 rounded-full -left-3 ring-8 ring-white">4</span>
-                            <h4 class="font-semibold">Final Assembly</h4>
-                            <p class="text-sm text-gray-600">Secure board in IP65-rated enclosure and apply waterproofing seals.</p>
-                        </li>
-                    </ol>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-accent mb-4">Deployment Roadmap</h3>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-semibold">Phase 1: Quick Hosting (Render)</h4>
-                            <p class="text-sm text-gray-600">Initial deployment on **Render** (or similar managed service) for speed, simplified database integration, and automatic HTTPS/SSL certificate management.</p>
-                        </div>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-semibold">Phase 2: Scale & Cost Optimization (AWS)</h4>
-                            <p class="text-sm text-gray-600">Migrate to **AWS Elastic Beanstalk** (for Django/ASGI) and **AWS S3** (for static files) for deeper cost control, performance tuning, and scalability once user volume increases.</p>
-                        </div>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-semibold">Future: OTA & Advanced Monitoring</h4>
-                            <p class="text-sm text-gray-600">Implement Over-the-Air updates and advanced alerting (SMS/Email) using the scalable cloud infrastructure.</p>
-                        </div>
+        <!-- SLIDE 3: Technical Architecture -->
+        <section id="slide3" class="slide bg-gray-50">
+            <div class="text-center max-w-6xl w-full">
+                <h2 class="text-4xl md:text-5xl font-black mb-12 text-prime">RESILIENT TECHNICAL ARCHITECTURE</h2>
+                <div class="grid grid-cols-1 md:grid-cols-5 items-center gap-6">
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-xl h-full justify-center">
+                        <span class="text-5xl mb-2">🧠</span>
+                        <h3 class="text-xl font-bold">Device (ESP32)</h3>
+                        <p class="text-sm text-gray-600 mt-1">Sensing & Actuation</p>
+                    </div>
+                    <div class="text-4xl text-prime font-bold hidden md:block">→</div>
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-xl h-full justify-center">
+                        <span class="text-5xl mb-2">☁️</span>
+                        <h3 class="text-xl font-bold">Cloud (AWS IoT)</h3>
+                        <p class="text-sm text-gray-600 mt-1">Secure MQTT Broker</p>
+                    </div>
+                    <div class="text-4xl text-prime font-bold hidden md:block">⇆</div>
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-xl h-full justify-center">
+                        <span class="text-5xl mb-2">💻</span>
+                        <h3 class="text-xl font-bold">Control (Django)</h3>
+                        <p class="text-sm text-gray-600 mt-1">ASGI/WSGI & WebSockets</p>
                     </div>
                 </div>
+                <div class="mt-16 bg-white p-6 rounded-lg shadow-2xl max-w-4xl mx-auto border-t-4 border-accent">
+                    <h3 class="text-2xl font-bold text-gray-700">Safety & Resilience</h3>
+                    <p class="mt-2 text-lg text-left">The **SSR-40DA** ensures complete **isolation** between the low-voltage ESP32 and the **240V AC pump**. A **Hybrid Power System** with battery backup keeps the system online during power outages.</p>
+                </div>
+            </div>
+            <div class="nav-btn space-x-4">
+                <button onclick="goToSlide(1)" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-gray-500 transition duration-300">← Prev</button>
+                <button onclick="goToSlide(3)" class="bg-prime text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-teal-700 transition duration-300">Next →</button>
             </div>
         </section>
 
+        <!-- SLIDE 4: Financial Impact -->
+        <section id="slide4" class="slide bg-teal-50">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-6xl w-full items-center">
+                <div class="space-y-6">
+                    <h2 class="text-4xl md:text-5xl font-black text-prime">FINANCIAL IMPACT</h2>
+                    <p class="text-2xl text-gray-700">AquaGuard has a strong business case, priced effectively against the high cost of pump failure.</p>
+                    <div class="data-card p-6 rounded-lg shadow-2xl">
+                        <h3 class="text-2xl font-bold text-gray-600">Target Market</h3>
+                        <p class="text-4xl font-extrabold text-prime mt-1">40% of Nairobi Homes</p>
+                    </div>
+                     <div class="data-card p-6 rounded-lg shadow-2xl">
+                        <h3 class="text-2xl font-bold text-gray-600">BOM Cost</h3>
+                        <p class="text-4xl font-extrabold text-prime mt-1">KES 6,880</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-xl">
+                    <h3 class="text-2xl font-semibold text-center mb-4">Profitability Analysis (KES)</h3>
+                     <div class="chart-container">
+                        <canvas id="profitChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-btn space-x-4">
+                <button onclick="goToSlide(2)" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-gray-500 transition duration-300">← Prev</button>
+                <button onclick="goToSlide(4)" class="bg-prime text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-teal-700 transition duration-300">Next →</button>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: Deployment & Call to Action -->
+        <section id="slide5" class="slide bg-white">
+            <div class="text-center max-w-5xl w-full">
+                <h2 class="text-4xl md:text-5xl font-black mb-12 text-prime">SCALABILITY & ROADMAP</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                    <div class="space-y-4 p-4 bg-gray-50 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-bold text-gray-700">Phase 1: Quick Launch</h3>
+                        <p class="text-lg">Deploy to **Render** for rapid, secure deployment and managed PostgreSQL.</p>
+                        <p class="text-sm font-mono text-prime">GOAL: Speed & Testing</p>
+                    </div>
+                    <div class="flex items-center justify-center text-5xl text-prime font-bold">→</div>
+                    <div class="space-y-4 p-4 bg-gray-50 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-bold text-gray-700">Phase 2: Enterprise Scale</h3>
+                        <p class="text-lg">Migrate to **AWS Elastic Beanstalk** for cost optimization and deep monitoring at volume.</p>
+                         <p class="text-sm font-mono text-prime">GOAL: Cost & Scale</p>
+                    </div>
+                </div>
+                <div class="mt-16 p-8 bg-red-100 rounded-lg shadow-2xl border-l-8 border-red-600">
+                    <h3 class="text-2xl font-bold text-red-700 mb-2">CRITICAL: Safety & Compliance</h3>
+                    <p class="text-xl text-gray-700">Due to 240V AC operation, **CE/UL/KC** (Kenya Certification) compliance is a **non-negotiable** requirement for market entry and consumer safety.</p>
+                </div>
+            </div>
+            <div class="nav-btn space-x-4">
+                <button onclick="goToSlide(3)" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg shadow-xl hover:bg-gray-500 transition duration-300">← Prev</button>
+            </div>
+        </section>
     </main>
 
-    <footer class="bg-secondary mt-20 py-6">
-        <div class="container mx-auto text-center text-gray-500">
-            <p>&copy; 2025 AquaGuard Kenya. A Production-Ready IoT Solution.</p>
-        </div>
-    </footer>
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const container = document.getElementById('presentation-container');
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-
-    const bomData = {
-        labels: ['Sensors (JSN-SR04T)', 'Relay (SSR)', 'ESP32', 'LCD', 'Power System', 'Current Sensor', 'Other'],
-        data: [1600, 1100, 1000, 1200, 650, 400, 930]
-    };
-
-    const profitData = {
-        labels: ['Low-End', 'High-End'],
-        costs: [6880, 6880],
-        prices: [18000, 25000],
-        profits: [11120, 18120]
-    };
-
-    const diagramInfo = {
-        device: {
-            title: 'Device Layer: The Senses',
-            text: 'The ESP32 microcontroller acts as the on-site brain. It reads data from the JSN-SR04T ultrasonic sensors (water level) and the ACS712 current sensor (pump status) in real-time.'
-        },
-        cloud: {
-            title: 'Cloud Ingest: The Superhighway',
-            text: 'Data from the ESP32 is securely published to AWS IoT Core using the MQTTs protocol. This serves as a highly scalable and reliable message broker, capable of handling data from thousands of devices simultaneously.'
-        },
-        backend: {
-            title: 'Backend Logic: The Central Brain',
-            text: 'A Django application, running on a cloud server (like Render or AWS), subscribes to the MQTT topics. It processes incoming data, stores it, and manages the logic for real-time updates and commands.'
-        },
-        frontend: {
-            title: 'User Interface: Your Control Panel',
-            text: 'The custom Django web application renders an interactive dashboard in your browser. It uses WebSockets to receive live data from the backend, providing an instant view of your water system without needing to refresh the page.'
-        },
-        control: {
-            title: 'Control Flow: Sending Commands',
-            text: 'When you press a button on the web app, a command (e.g., PUMP_ON) is sent via WebSocket to the Django server. The server then publishes this command to a specific MQTT topic on AWS IoT Core, which the target ESP32 is subscribed to, allowing for remote control.'
-        },
-        default: {
-            title: 'Component Details',
-            text: 'Select a component to learn more about its function within the AquaGuard system.'
-        }
-    };
-    
-    function initBOMChart() {
-        const ctx = document.getElementById('bomChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: bomData.labels,
-                datasets: [{
-                    label: 'Cost (Ksh)',
-                    data: bomData.data,
-                    backgroundColor: ['#004D40', '#00796B', '#4DB6AC', '#B2DFDB', '#80CBC4', '#26A69A', '#E0F2F1'],
-                    borderColor: '#FFFFFF',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                             boxWidth: 15
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed !== null) {
-                                    label += new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KSH' }).format(context.parsed);
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function initProfitChart() {
-        const ctx = document.getElementById('profitChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: profitData.labels,
-                datasets: [
-                    {
-                        label: 'BOM Cost',
-                        data: profitData.costs,
-                        backgroundColor: '#FFAB91',
-                    },
-                    {
-                        label: 'Selling Price',
-                        data: profitData.prices,
-                        backgroundColor: '#4DB6AC',
-                    },
-                    {
-                        label: 'Profit',
-                        data: profitData.profits,
-                        backgroundColor: '#00796B',
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'Ksh ' + (value / 1000) + 'k';
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                     legend: {
-                        position: 'bottom',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null) {
-                                     label += new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KSH' }).format(context.parsed.y);
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function handleTabs() {
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabPanes = document.querySelectorAll('.tab-pane');
-        
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const tabId = button.dataset.tab;
-
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                tabPanes.forEach(pane => {
-                    if (pane.id === `${tabId}-content`) {
-                        pane.classList.remove('hidden');
-                    } else {
-                        pane.classList.add('hidden');
-                    }
+        function goToSlide(index) {
+            if (index >= 0 && index < slides.length) {
+                container.scrollTo({
+                    top: slides[index].offsetTop,
+                    behavior: 'smooth'
                 });
-            });
-        });
-    }
-
-    function handleDiagramInteraction() {
-        const components = document.querySelectorAll('.system-component');
-        const infoBox = document.getElementById('diagram-info');
-        
-        const updateInfoBox = (key) => {
-            const info = diagramInfo[key] || diagramInfo.default;
-            infoBox.innerHTML = `
-                <h3 class="font-bold text-lg text-accent mb-2">${info.title}</h3>
-                <p class="text-gray-600">${info.text}</p>
-            `;
-        };
-
-        components.forEach(component => {
-            const infoKey = component.dataset.info;
-            component.addEventListener('mouseenter', () => updateInfoBox(infoKey));
-            component.addEventListener('click', () => updateInfoBox(infoKey));
-        });
-        
-        document.getElementById('diagram-container').addEventListener('mouseleave', () => updateInfoBox('default'));
-    }
-
-    function handleMobileNav() {
-        const mobileNav = document.getElementById('mobile-nav');
-        mobileNav.addEventListener('change', (e) => {
-            const targetId = e.target.value;
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'smooth' });
             }
-        });
-    }
-    
-    function handleScrollSpy() {
-        const sections = document.querySelectorAll('section');
-        const navLinks = document.querySelectorAll('.nav-link');
+        }
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.getAttribute('id');
-                    navLinks.forEach(link => {
-                        link.classList.remove('active');
-                        if (link.getAttribute('href') === `#${id}`) {
-                            link.classList.add('active');
+        document.addEventListener('DOMContentLoaded', () => {
+            const profitData = {
+                labels: ['BOM Cost', 'Low-End Price', 'High-End Price', 'Avg. Profit'],
+                data: [6880, 18000, 25000, 14620]
+            };
+
+            const ctx = document.getElementById('profitChartCanvas').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: profitData.labels,
+                    datasets: [{
+                        label: 'Amount (KES)',
+                        data: profitData.data,
+                        backgroundColor: ['#DC2626', '#00796B', '#004D40', '#4DB6AC'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: {
+                                callback: function(value) { return 'KES ' + (value / 1000) + 'k'; },
+                                font: { size: 14 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 14 } }
                         }
-                    });
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (context.parsed.y !== null) {
+                                        label = context.label + ': ' + new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KSH' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
                 }
             });
-        }, { rootMargin: "-50% 0px -50% 0px" });
-
-        sections.forEach(section => {
-            observer.observe(section);
         });
-    }
-
-    initBOMChart();
-    initProfitChart();
-    handleTabs();
-    handleDiagramInteraction();
-    handleMobileNav();
-    handleScrollSpy();
-});
-</script>
+    </script>
 </body>
 </html>
+```
